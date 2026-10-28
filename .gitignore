@@ -1,5 +1,6 @@
 # dados brutos ficam so na VM (BUs, logs resumidos: ~1,5 GB)
-dados/
+# a barra no inicio limita a regra a pasta da raiz (site/dados/ tem que ir para o site)
+/dados/
 .venv/
 __pycache__/
 *.pyc
