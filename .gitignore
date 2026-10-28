@@ -1,0 +1,7 @@
+# dados brutos ficam so na VM (BUs, logs resumidos: ~1,5 GB)
+dados/
+.venv/
+__pycache__/
+*.pyc
+# arquivo temporario de teste do site
+site/_t.html

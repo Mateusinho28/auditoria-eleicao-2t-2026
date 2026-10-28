@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Votos depois das 17h</title>
+<meta name="description" content="Auditoria independente dos logs de todas as urnas do 2º turno de 2026: quantos votos entraram de 8h a 17h e de 17h a 19h, por candidato. Por Mateus Costa Cruz.">
+<meta name="author" content="Mateus Costa Cruz">
+<!-- previa em redes sociais; a imagem precisa de endereco completo (ajustar se o endereco do site mudar) -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="Quantos votos entraram depois das 17h?">
+<meta property="og:description" content="Li o log de todas as 499.177 urnas do 2º turno: 35.900 votos depois das 17h, 0,81% da diferença entre os candidatos.">
+<meta property="og:url" content="https://auditoria-eleicao-2t-2026.pages.dev/">
+<meta property="og:image" content="https://auditoria-eleicao-2t-2026.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="35.900 votos depois das 17h, contra uma diferença de 4.430.191 entre os candidatos">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 22V13M16 22V9M23 22v-6' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --wash: rgba(42,120,214,0.10);
+  --ref: #52514e;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --wash: rgba(57,135,229,0.12);
+    --ref: #c3c2b7;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --s1: #3987e5;
+  --s2: #d95926;
+  --wash: rgba(57,135,229,0.12);
+  --ref: #c3c2b7;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+header { margin-bottom: 32px; }
+.kicker { color: var(--ink-2); font-size: 14px; margin: 0 0 8px; }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; }
+h2 { font-size: 22px; margin: 48px 0 8px; }
+h3 { font-size: 17px; margin: 24px 0 6px; }
+p { margin: 0 0 12px; }
+.lead { font-size: 18px; color: var(--ink-2); max-width: 720px; }
+a { color: var(--s1); }
+.byline { font-size: 14px; color: var(--ink-2); margin-top: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.hero { display: grid; gap: 4px; margin: 24px 0 16px; }
+.hero .valor { font-size: clamp(48px, 10vw, 72px); font-weight: 600; line-height: 1; }
+.hero .rotulo { color: var(--ink-2); max-width: 640px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+.tile .rotulo { font-size: 14px; color: var(--ink-2); }
+.tile .valor { font-size: 28px; font-weight: 600; margin-top: 2px; }
+.tile .nota { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.nota-graf { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); margin: 4px 0 8px; }
+.legenda span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--c); vertical-align: -1px; }
+.graf { position: relative; }
+.graf svg { display: block; width: 100%; height: auto; overflow: visible; }
+.graf text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.graf text.forte { fill: var(--ink-2); }
+.dica {
+  position: absolute; pointer-events: none; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; opacity: 0; transition: opacity .1s;
+  font-variant-numeric: tabular-nums; z-index: 2;
+}
+.dica b { font-weight: 600; }
+.tabela-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child, th.txt, td.txt { text-align: left; }
+th { color: var(--ink-2); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+th[data-ord] { cursor: pointer; user-select: none; }
+th[data-ord]:hover { color: var(--ink); }
+tr:last-child td { border-bottom: 0; }
+tr.total td { font-weight: 600; }
+.chave { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+input[type=search] {
+  width: 100%; max-width: 420px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--axis);
+  background: var(--surface); color: var(--ink); font: inherit; margin: 8px 0 12px;
+}
+.achados { display: grid; gap: 12px; }
+.achados .card p:last-child { margin-bottom: 0; }
+ul { padding-left: 20px; margin: 0 0 12px; }
+li { margin-bottom: 6px; }
+code { font-size: 0.9em; background: var(--grid); padding: 1px 5px; border-radius: 4px; }
+footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--grid); color: var(--ink-2); font-size: 14px; }
+.tema { float: right; background: none; border: 1px solid var(--axis); color: var(--ink-2); border-radius: 8px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+@media (max-width: 560px) { th, td { padding: 6px 8px; } }
+
+/* abas */
+.abas {
+  position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; overflow-x: auto;
+  padding: 10px 16px; margin: 0 -16px 28px; scrollbar-width: none;
+  background: color-mix(in srgb, var(--page) 90%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--grid);
+}
+.abas::-webkit-scrollbar { display: none; }
+.abas a {
+  flex: 0 0 auto; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--axis);
+  color: var(--ink-2); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap;
+}
+.abas a:hover { color: var(--ink); border-color: var(--ink-2); }
+.abas a[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+.abas a:focus-visible, .atalho:focus-visible, .navaba a:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.js .aba { display: none; }
+.js .aba.ativa { display: block; animation: surgir .18s ease-out; }
+@keyframes surgir { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .js .aba.ativa { animation: none; } }
+.aba > h2:first-child { margin-top: 4px; }
+.atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; margin-top: 12px; }
+.atalho {
+  display: block; text-decoration: none; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .15s, transform .15s;
+}
+.atalho:hover { border-color: var(--s1); transform: translateY(-1px); }
+.atalho strong { display: block; font-size: 16px; margin-bottom: 2px; }
+.atalho span { color: var(--ink-2); font-size: 14px; }
+.atalho strong::after { content: " →"; color: var(--muted); }
+.navaba { display: flex; justify-content: space-between; gap: 12px; margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--grid); }
+.navaba a { text-decoration: none; color: var(--ink-2); font-size: 14px; }
+.navaba a:hover { color: var(--ink); }
+.navaba a b { display: block; color: var(--ink); font-size: 16px; font-weight: 600; }
+.navaba .prox { text-align: right; margin-left: auto; }
+
+/* mapa: rampa sequencial azul, do claro (pouco) ao escuro (muito); no tema escuro, do escuro ao claro */
+:root { --q1: #cde2fb; --q2: #86b6ef; --q3: #3987e5; --q4: #1c5cab; --q5: #0d366b; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --q1: #104281; --q2: #1c5cab; --q3: #2a78d6; --q4: #6da7ec; --q5: #b7d3f6; }
+}
+:root[data-theme="dark"] { --q1: #104281; --q2: #1c5cab; --q3: #2a78d6; --q4: #6da7ec; --q5: #b7d3f6; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 10px; background: var(--grid); margin: 4px 0 12px; }
+.seg button {
+  border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 14px; font-weight: 500;
+  padding: 6px 12px; border-radius: 7px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.mapa-card { display: grid; justify-items: center; gap: 12px; }
+#g-mapa { width: 100%; max-width: 520px; }
+.graf text.no-claro { fill: #0b0b0b; }
+.graf text.no-escuro { fill: #ffffff; }
+.leg-mapa { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: center; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.leg-mapa span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; background: var(--c); }
+.downloads { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); margin: 16px 0 8px; }
+.download {
+  display: block; text-decoration: none; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .15s, transform .15s;
+}
+.download:hover { border-color: var(--s1); transform: translateY(-1px); }
+.download strong { display: block; font-size: 16px; }
+.download strong::before { content: "↓ "; color: var(--s1); }
+.download span { display: block; color: var(--ink-2); font-size: 14px; margin: 4px 0 8px; }
+.download em { font-style: normal; font-size: 13px; color: var(--muted); }
+.baixar { display: inline-block; margin-top: 12px; font-size: 14px; font-weight: 500; text-decoration: none; border: 1px solid var(--axis); color: var(--ink); padding: 7px 14px; border-radius: 8px; }
+.baixar::before { content: "↓ "; color: var(--s1); }
+.baixar:hover { border-color: var(--s1); }
+</style>
+<script>document.documentElement.className = "js";</script>
+</head>
+<body>
+<main>
+<header>
+  <button class="tema" id="tema" type="button" aria-label="Alternar tema claro/escuro">Tema</button>
+  <p class="kicker">Eleição presidencial 2026 · 2º turno · 25 de outubro</p>
+  <h1>Quantos votos entraram depois das 17h?</h1>
+  <p class="lead">Baixei e li o log de todas as 499.177 urnas eletrônicas publicadas pelo TSE para contar, voto a voto, a que horas cada um foi registrado, e cruzei com o boletim de cada urna.</p>
+  <p class="byline">Por <strong>Mateus Costa Cruz</strong> · Código e dados: <a href="https://github.com/Mateusinho28/auditoria-eleicao-2t-2026">github.com/Mateusinho28/auditoria-eleicao-2t-2026</a></p>
+</header>
+
+<nav class="abas" id="abas" aria-label="Seções do site">
+  <a href="#resumo">Resumo</a>
+  <a href="#horario">Por horário</a>
+  <a href="#minuto">Minuto a minuto</a>
+  <a href="#estados">Por estado</a>
+  <a href="#municipios">Por município</a>
+  <a href="#conferencia">Conferência</a>
+  <a href="#metodo">Como foi feito</a>
+  <a href="#dados">Baixar dados</a>
+</nav>
+
+<section class="aba" id="aba-resumo" data-nome="Resumo">
+  <div class="hero">
+    <div class="valor" id="h-tardios">…</div>
+    <div class="rotulo" id="h-tardios-txt">votos depois das 17h, contando os votos sem horário e o exterior</div>
+  </div>
+  <div class="tiles">
+    <div class="card tile"><div class="rotulo">Votos de 8h a 17h</div><div class="valor" id="t-8-17">…</div><div class="nota">Brasil, horário de Brasília</div></div>
+    <div class="card tile"><div class="rotulo">Votos de 17h a 19h</div><div class="valor" id="t-17-19">…</div><div class="nota">Brasil, horário de Brasília</div></div>
+    <div class="card tile"><div class="rotulo">Diferença oficial Lula − Flávio</div><div class="valor" id="t-dif">…</div><div class="nota">resultado do TSE</div></div>
+    <div class="card tile"><div class="rotulo">Urnas que fecharam depois das 17h45</div><div class="valor" id="t-est">…</div><div class="nota" id="t-est-n"></div></div>
+  </div>
+
+  <h2>Os votos tardios perto da diferença</h2>
+  <p>As duas barras estão na mesma escala. Mesmo no pior caso, com todos os votos depois das 17h de uma urna indo para o mesmo candidato, a diferença continua acima de 4,39 milhões.</p>
+  <div class="card"><div class="graf" id="g-escala"></div></div>
+
+  <h2>Explore</h2>
+  <div class="atalhos">
+    <a class="atalho" href="#horario"><strong>Por horário</strong><span>8h–17h, 17h–19h e depois, com a estimativa por candidato</span></a>
+    <a class="atalho" href="#minuto"><strong>Minuto a minuto</strong><span>O ritmo de votação do país inteiro ao longo do dia</span></a>
+    <a class="atalho" href="#estados"><strong>Por estado</strong><span>Onde estão os votos depois das 17h</span></a>
+    <a class="atalho" href="#municipios"><strong>Por município</strong><span>Busque a sua cidade</span></a>
+    <a class="atalho" href="#conferencia"><strong>Conferência</strong><span>Log contra boletim, urna por urna, e o que apareceu de diferente</span></a>
+    <a class="atalho" href="#metodo"><strong>Como foi feito</strong><span>Fontes, regras, limitações e como reproduzir</span></a>
+    <a class="atalho" href="#dados"><strong>Baixar dados</strong><span>Todas as urnas, municípios e estados em CSV</span></a>
+  </div>
+</section>
+
+<section class="aba" id="aba-horario" data-nome="Por horário">
+  <h2>Votos por faixa de horário e candidato</h2>
+  <p>Brasil e exterior. No Brasil, horário de Brasília; no exterior, hora local, porque lá a votação segue o fuso de cada país.</p>
+  <div class="tabela-wrap"><table id="tab-faixas"></table></div>
+  <p class="nota-graf">Por candidato é uma estimativa: o log da urna registra a hora de cada voto, mas não em quem foi o voto (sigilo do voto). Os votos de cada faixa foram distribuídos pela proporção da própria urna. Por isso, no pior caso, todos os votos depois das 17h de cada urna são atribuídos a um único candidato, limitado ao que ele teve naquela urna.</p>
+</section>
+
+<section class="aba" id="aba-minuto" data-nome="Minuto a minuto">
+  <h2>Votos por minuto ao longo do dia</h2>
+  <p>Soma de todas as urnas do Brasil, em horário de Brasília.</p>
+  <div class="card"><div class="graf" id="g-dia"></div></div>
+  <h3>Depois das 17h10, ampliado</h3>
+  <p>Depois que a fila das 17h termina, o ritmo cai para cerca de 40 votos por minuto no país inteiro, vindos das urnas que ficaram abertas.</p>
+  <div class="card"><div class="graf" id="g-zoom"></div></div>
+</section>
+
+<section class="aba" id="aba-estados" data-nome="Por estado">
+  <h2>Por estado</h2>
+  <p>Escolha o que o mapa mostra. Passe o mouse (ou toque) num estado para ver os números.</p>
+  <div class="seg" id="mapa-metrica" role="group" aria-label="O que o mapa mostra">
+    <button type="button" data-m="v17_19" aria-pressed="true">Votos 17h–19h</button>
+    <button type="button" data-m="por100k" aria-pressed="false">A cada 100 mil votos</button>
+    <button type="button" data-m="pct_est" aria-pressed="false">% de urnas após 17h45</button>
+  </div>
+  <div class="card mapa-card">
+    <div class="graf" id="g-mapa"></div>
+    <div class="leg-mapa" id="leg-mapa"></div>
+  </div>
+  <p class="nota-graf">Cartograma: cada estado é um quadrado do mesmo tamanho, na posição aproximada do mapa, para que os estados pequenos fiquem visíveis.</p>
+  <h3>Votos de 17h a 19h por UF</h3>
+  <div class="card"><div class="graf" id="g-uf"></div></div>
+  <h3>Tabela por UF</h3>
+  <p class="nota-graf">Clique no título de uma coluna para ordenar.</p>
+  <div class="tabela-wrap"><table id="tab-uf"></table></div>
+  <p><a class="baixar" href="dados/por_uf.csv" download>Baixar tabela por UF (CSV)</a></p>
+</section>
+
+<section class="aba" id="aba-municipios" data-nome="Por município">
+  <h2>Por município</h2>
+  <p>Mostra os 50 municípios com mais votos depois das 17h. Digite para buscar qualquer um.</p>
+  <input type="search" id="busca" placeholder="Buscar município ou UF (ex.: Niterói, BA)" aria-label="Buscar município">
+  <div class="tabela-wrap"><table id="tab-mun"></table></div>
+  <p><a class="baixar" href="dados/por_municipio.csv" download>Baixar todos os municípios (CSV)</a></p>
+</section>
+
+<section class="aba" id="aba-conferencia" data-nome="Conferência">
+  <h2>O que a conferência encontrou</h2>
+  <div class="tiles">
+    <div class="card tile"><div class="rotulo">Urnas com log igual ao BU</div><div class="valor" id="c-igual">…</div><div class="nota">votos no log = comparecimento no boletim</div></div>
+    <div class="card tile"><div class="rotulo">Soma dos BUs × resultado oficial</div><div class="valor">0</div><div class="nota">de diferença em Lula, Flávio, branco, nulo e comparecimento</div></div>
+    <div class="card tile"><div class="rotulo">Arquivos de BU conferidos</div><div class="valor">28 de 28</div><div class="nota">SHA-512 igual ao publicado pelo TSE</div></div>
+  </div>
+  <div class="achados">
+    <div class="card">
+      <h3>Uma urna sem log publicado</h3>
+      <p>Guarulhos (SP), zona 0395, seção 0298. O TSE publicou o boletim, o RDV e a assinatura, mas não o log. Pelo boletim, ela abriu às 08:00:01 e encerrou às 17:03:46, com 268 votos. Sem log não há horário, então os 268 votos entram como "sem horário" e contam no pior caso.</p>
+    </div>
+    <div class="card">
+      <h3>Dois logs no mesmo pacote</h3>
+      <p>Santa Maria de Jetibá (ES), zona 0009, seção 0085. O pacote de log da seção traz também o log da seção vizinha 0112: 612 votos no log contra 308 no boletim. Separando por urna, a seção 0085 tem exatamente os 308 votos do boletim, todos antes das 17h.</p>
+    </div>
+    <div class="card">
+      <h3>Seis urnas com menos votos no log</h3>
+      <p>Em Ibotirama e Conde (BA), São José de Ribamar (MA), Santa Rita (PB), Parnaíba (PI) e Boa Vista do Incra (RS), o log tem de 1 a 36 votos a menos que o boletim, um padrão comum em urna substituída durante o dia. As seis fecharam entre 17h01 e 17h08. A diferença, 54 votos, entra como "sem horário".</p>
+    </div>
+    <div class="card">
+      <h3>Erro de cadastro no catálogo do TSE</h3>
+      <p>No Portal de Dados Abertos, a entrada "Boletim de Urna" de Roraima aponta para o arquivo de hash em vez do zip. O zip existe e o hash confere; o script monta o endereço certo.</p>
+    </div>
+  </div>
+</section>
+
+<section class="aba" id="aba-metodo" data-nome="Como foi feito">
+  <h2>Como foi feito</h2>
+  <h3>Fontes, todas oficiais do TSE</h3>
+  <ul>
+    <li><strong>Boletins de urna</strong> do 2º turno (Portal de Dados Abertos), 28 arquivos, com o SHA-512 de cada um conferido contra o publicado pelo TSE. Dão os votos de cada candidato por urna.</li>
+    <li><strong>Log de cada urna</strong> (<code>logd.dat</code>), baixado um a um do site de resultados: 517.179 seções na lista oficial, sendo 499.248 com urna própria e 17.931 agregadas, que não têm arquivo próprio. Guardei o SHA-256 de cada log.</li>
+    <li><strong>Resultado oficial</strong> (<code>br-c0001-e006258-u.json</code>), usado para conferir a soma dos boletins.</li>
+  </ul>
+  <h3>Regras</h3>
+  <ul>
+    <li>Um voto é o evento "O voto do eleitor foi computado" de 25/10/2026 no log. Em urna substituída, o pacote traz mais de um log; todos são lidos e a mesma linha não é contada duas vezes.</li>
+    <li>O log usa a hora local da urna. Como a votação abre às 8h de Brasília, a hora de abertura revela o fuso de cada município (Acre: 2h a menos; Amazonas, Mato Grosso, Mato Grosso do Sul, Rondônia e Roraima: 1h a menos).</li>
+    <li>Votos que estão no boletim mas não aparecem no log com horário são "sem horário" e, por cautela, contam como depois das 17h.</li>
+    <li>Urna estendida é a que encerrou depois das 17h45 de Brasília.</li>
+  </ul>
+  <h3>Limitações</h3>
+  <ul>
+    <li>O log não diz em quem foi o voto. Por candidato e por horário, só existe estimativa e pior caso.</li>
+    <li>O horário é o do relógio interno de cada urna.</li>
+    <li>Quem estava na fila às 17h tem direito de votar em qualquer eleição. Grande parte dos votos logo depois das 17h é essa fila, não efeito da prorrogação.</li>
+    <li>A análise mede só o efeito direto dos votos registrados, não questões jurídicas nem efeitos indiretos da notícia da prorrogação.</li>
+  </ul>
+  <h3>Conferência com análises independentes</h3>
+  <p>Os 34.330 votos com horário depois das 17h no Brasil batem exatamente com os de <a href="https://github.com/apolinario/urnas-tardias">apolinario/urnas-tardias</a> e de <a href="https://github.com/Nervado/prorrogacao-2t2026">Nervado/prorrogacao-2t2026</a>, que leram os mesmos logs com código próprio. Comparando urna por urna com o primeiro, as 497.882 urnas que existem nas duas análises dão o mesmo número.</p>
+  <h3>Reproduzir</h3>
+  <p>Scripts, manifesto de hashes e resultados estão no <a href="https://github.com/Mateusinho28/auditoria-eleicao-2t-2026">repositório</a>. A coleta dos logs levou cerca de 14 horas numa VM na nuvem.</p>
+</section>
+
+<section class="aba" id="aba-dados" data-nome="Baixar dados">
+  <h2>Baixar os dados</h2>
+  <p>Os mesmos arquivos que geraram este site. Os CSVs abrem no Excel (separados por vírgula, em UTF-8).</p>
+  <div class="downloads">
+    <a class="download" href="dados/secoes.csv.gz" download><strong>Todas as urnas</strong><span>Uma linha por urna (499.205): votos por faixa de horário, estimativa por candidato, encerramento, fuso e situação da conferência.</span><em>secoes.csv.gz · 11,7 MB, compactado</em></a>
+    <a class="download" href="dados/por_municipio.csv" download><strong>Por município</strong><span>Totais de cada município, incluindo as cidades do exterior.</span><em>por_municipio.csv · 1 MB</em></a>
+    <a class="download" href="dados/por_uf.csv" download><strong>Por UF</strong><span>Totais por estado, Brasil e total com exterior.</span><em>por_uf.csv · 7 KB</em></a>
+    <a class="download" href="dados/por_minuto.csv" download><strong>Minuto a minuto</strong><span>Votos do Brasil inteiro por minuto, no horário de Brasília.</span><em>por_minuto.csv · 8 KB</em></a>
+    <a class="download" href="dados/resumo.json" download><strong>Resumo</strong><span>Totais e conferência em JSON, para quem programa.</span><em>resumo.json · 34 KB</em></a>
+  </div>
+  <h3>Principais colunas</h3>
+  <ul>
+    <li><code>votos_8h_17h</code>, <code>votos_17h_19h</code>, <code>votos_depois_19h</code>: votos com horário no log, em cada faixa (horário de Brasília; no exterior, hora local).</li>
+    <li><code>votos_sem_horario</code>: votos do boletim que não aparecem no log com horário.</li>
+    <li><code>est_lula_17h_19h</code>, <code>est_flavio_17h_19h</code> etc.: estimativa por candidato, pela proporção da urna.</li>
+    <li><code>max_lula_tardios</code>, <code>max_flavio_tardios</code>: pior caso, todos os votos depois das 17h da urna para o mesmo candidato.</li>
+    <li><code>estendida</code>: a urna encerrou depois das 17h45 de Brasília.</li>
+  </ul>
+  <p>Os scripts que geram esses arquivos estão no <a href="https://github.com/Mateusinho28/auditoria-eleicao-2t-2026">repositório</a>.</p>
+</section>
+
+<footer>
+  Auditoria independente feita por <strong>Mateus Costa Cruz</strong> com dados públicos do Tribunal Superior Eleitoral. Não tem vínculo com o TSE, partido ou candidato.
+  · <a href="https://github.com/Mateusinho28">github.com/Mateusinho28</a>
+</footer>
+</main>
+
+<div class="dica" id="dica" role="status"></div>
+
+<script>
+(function () {
+  // tema: botao alterna entre claro e escuro; sem escolha, segue o sistema
+  var raiz = document.documentElement;
+  try { var t = localStorage.getItem("tema"); if (t) raiz.setAttribute("data-theme", t); } catch (e) {}
+  document.getElementById("tema").addEventListener("click", function () {
+    var escuro = raiz.getAttribute("data-theme") ? raiz.getAttribute("data-theme") === "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches;
+    var novo = escuro ? "light" : "dark";
+    raiz.setAttribute("data-theme", novo);
+    try { localStorage.setItem("tema", novo); } catch (e) {}
+    desenhar();
+  });
+
+  var D = null;
+  var fmt = new Intl.NumberFormat("pt-BR");
+  var f = function (n) { return fmt.format(Math.round(n)); };
+  var pct = function (n, d) { return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: n / d < 0.001 ? 3 : 2 }).format(100 * n / d) + "%"; };
+  var cor = function (v) { return getComputedStyle(raiz).getPropertyValue(v).trim(); };
+  var NS = "http://www.w3.org/2000/svg";
+  var dica = document.getElementById("dica");
+
+  function el(nome, attrs, pai) {
+    var e = document.createElementNS(NS, nome);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (pai) pai.appendChild(e);
+    return e;
+  }
+  function texto(pai, x, y, s, attrs) {
+    var t = el("text", Object.assign({ x: x, y: y }, attrs || {}), pai);
+    t.textContent = s;
+    return t;
+  }
+  function mostrarDica(html, ev) {
+    dica.innerHTML = html;
+    dica.style.opacity = 1;
+    var w = dica.offsetWidth, h = dica.offsetHeight;
+    var x = ev.pageX + 14, y = ev.pageY - h - 10;
+    if (x + w > window.scrollX + document.documentElement.clientWidth - 8) x = ev.pageX - w - 14;
+    if (y < window.scrollY + 8) y = ev.pageY + 16;
+    dica.style.left = x + "px"; dica.style.top = y + "px";
+  }
+  function esconderDica() { dica.style.opacity = 0; }
+  function ticks(max, n) {
+    var bruto = max / n, mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+    var passo = [1, 2, 2.5, 5, 10].map(function (m) { return m * mag; }).find(function (p) { return p >= bruto; });
+    var r = []; for (var v = 0; v <= max + 1e-9; v += passo) r.push(v);
+    if (r[r.length - 1] < max) r.push(r[r.length - 1] + passo);
+    return r;
+  }
+  function compacto(v) {
+    if (v >= 1e6) return (v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mi";
+    if (v >= 1e3) return (v / 1e3).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mil";
+    return String(v);
+  }
+  var min = function (hhmm) { var p = hhmm.split(":"); return +p[0] * 60 + +p[1]; };
+  var hora = function (m) { return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+
+  // ---------- barras horizontais na mesma escala ----------
+  function grafEscala() {
+    var box = document.getElementById("g-escala"); box.innerHTML = "";
+    var W = box.clientWidth, rotW = Math.min(230, W * 0.42), H = 3 * 56 + 8;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Comparação entre votos depois das 17h e a diferença oficial" }, box);
+    var t = D.total, itens = [
+      ["Diferença oficial Lula − Flávio", D.diferenca, "var(--s1)"],
+      ["Diferença no pior caso", D.diferenca - t.max_lula, "var(--s1)"],
+      ["Votos depois das 17h", t.faixas["17h_19h"].votos + t.faixas.depois_19h.votos + t.faixas.sem_horario.votos, "var(--s2)"]
+    ];
+    var x0 = rotW, x1 = W - 90, esc = function (v) { return x0 + (x1 - x0) * v / D.diferenca; };
+    itens.forEach(function (it, i) {
+      var y = 12 + i * 56;
+      texto(svg, 0, y + 15, it[0], { class: "forte" });
+      var w = Math.max(esc(it[1]) - x0, 3);
+      var r = el("path", { d: barraH(x0, y, w, 22), fill: it[2] }, svg);
+      texto(svg, x0 + w + 8, y + 15, f(it[1]), { class: "forte" });
+      var alvo = el("rect", { x: 0, y: y - 6, width: W, height: 36, fill: "transparent" }, svg);
+      alvo.addEventListener("mousemove", function (ev) { mostrarDica("<b>" + it[0] + "</b><br>" + f(it[1]) + " votos", ev); });
+      alvo.addEventListener("mouseleave", esconderDica);
+    });
+  }
+  function barraH(x, y, w, h) { // ponta arredondada de 4px, base reta
+    var r = Math.min(4, w / 2, h / 2);
+    return "M" + x + "," + y + "H" + (x + w - r) + "Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) +
+      "V" + (y + h - r) + "Q" + (x + w) + "," + (y + h) + " " + (x + w - r) + "," + (y + h) + "H" + x + "Z";
+  }
+
+  // ---------- linha por minuto ----------
+  function grafLinha(id, de, ate, marcas) {
+    var box = document.getElementById(id); box.innerHTML = "";
+    var serie = D.por_minuto.map(function (p) { return [min(p[0]), p[1]]; }).filter(function (p) { return p[0] >= de && p[0] <= ate; });
+    var mapa = {}; serie.forEach(function (p) { mapa[p[0]] = p[1]; });
+    var pts = []; for (var m = de; m <= ate; m++) pts.push([m, mapa[m] || 0]);
+    var W = box.clientWidth, H = Math.max(220, Math.min(320, W * 0.45)), m0 = { l: 56, r: 12, t: 16, b: 28 };
+    var max = Math.max.apply(null, pts.map(function (p) { return p[1]; }));
+    var tk = ticks(max, 4), ymax = tk[tk.length - 1];
+    var X = function (v) { return m0.l + (W - m0.l - m0.r) * (v - de) / (ate - de); };
+    var Y = function (v) { return H - m0.b - (H - m0.t - m0.b) * v / ymax; };
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Votos por minuto de " + hora(de) + " a " + hora(ate) }, box);
+    tk.forEach(function (v) {
+      el("line", { x1: m0.l, x2: W - m0.r, y1: Y(v), y2: Y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+      texto(svg, m0.l - 8, Y(v) + 4, compacto(v), { "text-anchor": "end" });
+    });
+    // intervalo entre as horas do eixo: o menor que deixe ~48px entre os rotulos
+    var largura = W - m0.l - m0.r;
+    var passoH = [30, 60, 120, 180, 240].find(function (p) { return largura * p / (ate - de) >= 48; }) || 240;
+    for (var h = Math.ceil(de / passoH) * passoH; h <= ate; h += passoH) {
+      if (X(h) - m0.l < 14 || W - m0.r - X(h) < 14) continue;
+      texto(svg, X(h), H - 8, hora(h), { "text-anchor": "middle" });
+    }
+    // linhas de referencia (17h, 19h); o rotulo vai para o lado onde nao colide com a marca vizinha
+    var xs = (marcas || []).filter(function (mc) { return mc[0] >= de && mc[0] <= ate; });
+    xs.forEach(function (mc, i) {
+      el("line", { x1: X(mc[0]), x2: X(mc[0]), y1: m0.t, y2: H - m0.b, stroke: "var(--ref)", "stroke-width": 1, opacity: 0.5 }, svg);
+      var apertado = xs.length > 1 && Math.abs(X(xs[1][0]) - X(xs[0][0])) < 56;
+      var y = m0.t + 10 + (apertado && i === 1 ? 16 : 0);
+      texto(svg, X(mc[0]) + (mc[2] === "esq" ? -6 : 6), y, mc[1], { class: "forte", "text-anchor": mc[2] === "esq" ? "end" : "start" });
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1); }).join("");
+    el("path", { d: d + "L" + X(ate) + "," + Y(0) + "L" + X(de) + "," + Y(0) + "Z", fill: "var(--wash)" }, svg);
+    el("path", { d: d, fill: "none", stroke: "var(--s1)", "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    var guia = el("line", { y1: m0.t, y2: H - m0.b, stroke: "var(--axis)", "stroke-width": 1, opacity: 0 }, svg);
+    var ponto = el("circle", { r: 4, fill: "var(--s1)", stroke: "var(--surface)", "stroke-width": 2, opacity: 0 }, svg);
+    var alvo = el("rect", { x: m0.l, y: m0.t, width: W - m0.l - m0.r, height: H - m0.t - m0.b, fill: "transparent" }, svg);
+    alvo.addEventListener("mousemove", function (ev) {
+      var r = svg.getBoundingClientRect(), xv = (ev.clientX - r.left) * W / r.width;
+      var mm = Math.round(de + (xv - m0.l) * (ate - de) / (W - m0.l - m0.r));
+      mm = Math.max(de, Math.min(ate, mm));
+      var v = mapa[mm] || 0;
+      guia.setAttribute("x1", X(mm)); guia.setAttribute("x2", X(mm)); guia.setAttribute("opacity", 1);
+      ponto.setAttribute("cx", X(mm)); ponto.setAttribute("cy", Y(v)); ponto.setAttribute("opacity", 1);
+      mostrarDica("<b>" + hora(mm) + "</b><br>" + f(v) + " votos neste minuto", ev);
+    });
+    alvo.addEventListener("mouseleave", function () { guia.setAttribute("opacity", 0); ponto.setAttribute("opacity", 0); esconderDica(); });
+  }
+
+  // ---------- barras por UF ----------
+  function grafUF() {
+    var box = document.getElementById("g-uf"); box.innerHTML = "";
+    var lista = D.uf.filter(function (u) { return u.uf !== "ZZ"; }).slice().sort(function (a, b) { return b.v17_19 - a.v17_19; });
+    var W = box.clientWidth, linha = 22, H = lista.length * linha + 8, x0 = 34, x1 = W - 64;
+    var max = lista[0].v17_19;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Votos de 17h a 19h por UF" }, box);
+    lista.forEach(function (u, i) {
+      var y = 4 + i * linha, w = Math.max((x1 - x0) * u.v17_19 / max, u.v17_19 ? 3 : 0);
+      texto(svg, 0, y + 12, u.uf, { class: "forte" });
+      if (w) el("path", { d: barraH(x0, y + 2, w, 14), fill: "var(--s1)" }, svg);
+      texto(svg, x0 + w + 6, y + 12, f(u.v17_19));
+      var alvo = el("rect", { x: 0, y: y, width: W, height: linha, fill: "transparent" }, svg);
+      alvo.addEventListener("mousemove", function (ev) {
+        mostrarDica("<b>" + u.uf + "</b><br>" + f(u.v17_19) + " votos de 17h a 19h<br>" + f(u.estendidas) + " de " + f(u.urnas) +
+          " urnas fecharam depois das 17h45<br>Estimativa: Lula " + f(u.lula_17_19) + " · Flávio " + f(u.flavio_17_19), ev);
+      });
+      alvo.addEventListener("mouseleave", esconderDica);
+    });
+  }
+
+  // ---------- mapa (cartograma: um quadrado por estado, posicao aproximada) ----------
+  var GRADE = { RR: [1, 0], AP: [3, 0], AC: [0, 1], AM: [1, 1], PA: [2, 1], MA: [3, 1], CE: [4, 1], RN: [5, 1],
+    RO: [1, 2], MT: [2, 2], TO: [3, 2], PI: [4, 2], PB: [5, 2], MS: [1, 3], GO: [2, 3], DF: [3, 3], BA: [4, 3],
+    PE: [5, 3], AL: [6, 3], PR: [1, 4], SP: [2, 4], MG: [3, 4], ES: [4, 4], SE: [5, 4], SC: [1, 5], RJ: [3, 5], RS: [1, 6] };
+  var METRICAS = {
+    v17_19: { nome: "votos de 17h a 19h", val: function (u) { return u.v17_19; }, fmt: f },
+    por100k: { nome: "votos de 17h a 19h a cada 100 mil votos", val: function (u) { return 1e5 * u.v17_19 / u.comparecimento; },
+      fmt: function (v) { return v.toLocaleString("pt-BR", { maximumFractionDigits: 1 }); } },
+    pct_est: { nome: "% de urnas que fecharam depois das 17h45", val: function (u) { return 100 * u.estendidas / u.urnas; },
+      fmt: function (v) { return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "%"; } }
+  };
+  var metrica = "v17_19";
+  function luminancia(c) {
+    var m = c.match(/^#(..)(..)(..)$/); if (!m) return 0;
+    var l = [1, 2, 3].map(function (i) { var v = parseInt(m[i], 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+  }
+  function grafMapa() {
+    var box = document.getElementById("g-mapa"); box.innerHTML = "";
+    var M = METRICAS[metrica], ufs = D.uf.filter(function (u) { return GRADE[u.uf]; });
+    var vals = ufs.map(M.val).sort(function (a, b) { return a - b; });
+    // 5 faixas por quantil, para cada cor ter mais ou menos o mesmo numero de estados
+    var cortes = [1, 2, 3, 4].map(function (i) { return vals[Math.floor(i * vals.length / 5)]; });
+    var classe = function (v) { var k = 0; while (k < 4 && v >= cortes[k]) k++; return k; };
+    var cores = [1, 2, 3, 4, 5].map(function (i) { return cor("--q" + i); });
+    var W = box.clientWidth, lado = Math.floor((W - 6 * 4) / 7), gap = 4, H = 7 * lado + 6 * gap;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Mapa do Brasil por estado: " + M.nome }, box);
+    ufs.forEach(function (u) {
+      var g = GRADE[u.uf], x = g[0] * (lado + gap), y = g[1] * (lado + gap), v = M.val(u), k = classe(v);
+      el("rect", { x: x, y: y, width: lado, height: lado, rx: 6, fill: cores[k] }, svg);
+      var tom = luminancia(cores[k]) > 0.35 ? "no-claro" : "no-escuro";
+      texto(svg, x + lado / 2, y + lado / 2 - (lado > 52 ? 2 : -4), u.uf, { "text-anchor": "middle", class: tom, "font-weight": 600, style: "font-size:" + Math.max(11, Math.min(15, lado / 4)) + "px" });
+      if (lado > 52) texto(svg, x + lado / 2, y + lado / 2 + 15, M.fmt(v), { "text-anchor": "middle", class: tom, style: "font-size:11px" });
+      var alvo = el("rect", { x: x, y: y, width: lado, height: lado, fill: "transparent" }, svg);
+      alvo.addEventListener("mousemove", function (ev) {
+        mostrarDica("<b>" + u.uf + "</b><br>" + f(u.v17_19) + " votos de 17h a 19h<br>" + METRICAS.por100k.fmt(METRICAS.por100k.val(u)) +
+          " a cada 100 mil votos<br>" + f(u.estendidas) + " de " + f(u.urnas) + " urnas após 17h45 (" + METRICAS.pct_est.fmt(METRICAS.pct_est.val(u)) + ")", ev);
+      });
+      alvo.addEventListener("mouseleave", esconderDica);
+    });
+    var lim = [vals[0]].concat(cortes, [vals[vals.length - 1]]);
+    document.getElementById("leg-mapa").innerHTML = [0, 1, 2, 3, 4].map(function (i) {
+      return "<span style='--c:" + cores[i] + "'>" + M.fmt(lim[i]) + " a " + M.fmt(lim[i + 1]) + "</span>";
+    }).join("");
+  }
+  document.querySelectorAll("#mapa-metrica button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      metrica = b.getAttribute("data-m");
+      document.querySelectorAll("#mapa-metrica button").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
+      grafMapa();
+    });
+  });
+
+  // ---------- tabelas ----------
+  function tabFaixas() {
+    var nomes = { antes_8h: "Antes das 8h", "8h_17h": "8h às 17h", "17h_19h": "17h às 19h", depois_19h: "Depois das 19h", sem_horario: "Sem horário no log" };
+    var h = "<thead><tr><th>Faixa</th><th class='txt'>Onde</th><th>Votos</th><th><span class='chave' style='background:var(--s1)'></span>Lula (est.)</th><th><span class='chave' style='background:var(--s2)'></span>Flávio (est.)</th><th>Branco (est.)</th><th>Nulo (est.)</th></tr></thead><tbody>";
+    ["8h_17h", "17h_19h", "depois_19h", "sem_horario", "antes_8h"].forEach(function (fx) {
+      [["Brasil", D.brasil], ["Exterior", null]].forEach(function (par) {
+        var b = D.brasil.faixas[fx], t = D.total.faixas[fx];
+        var v = par[1] ? b : { votos: t.votos - b.votos, lula: t.lula - b.lula, flavio: t.flavio - b.flavio, branco: t.branco - b.branco, nulo: t.nulo - b.nulo };
+        h += "<tr><td>" + nomes[fx] + "</td><td class='txt'>" + par[0] + "</td><td>" + f(v.votos) + "</td><td>" + f(v.lula) + "</td><td>" + f(v.flavio) + "</td><td>" + f(v.branco) + "</td><td>" + f(v.nulo) + "</td></tr>";
+      });
+    });
+    var t = D.total;
+    h += "<tr class='total'><td>Total</td><td class='txt'>Brasil + exterior</td><td>" + f(t.comparecimento) + "</td><td>" + f(t.lula) + "</td><td>" + f(t.flavio) + "</td><td>" + f(t.branco) + "</td><td>" + f(t.nulo) + "</td></tr></tbody>";
+    document.getElementById("tab-faixas").innerHTML = h;
+  }
+
+  var colUF = [["uf", "UF", "txt"], ["urnas", "Urnas"], ["estendidas", "Fecharam após 17h45"], ["v8_17", "Votos 8h–17h"], ["v17_19", "Votos 17h–19h"],
+    ["sem_h", "Sem horário"], ["lula_tard", "Lula após 17h (est.)"], ["flavio_tard", "Flávio após 17h (est.)"]];
+  var ordUF = { c: "v17_19", d: -1 };
+  function tabUF() {
+    var lista = D.uf.slice().sort(function (a, b) {
+      var x = a[ordUF.c], y = b[ordUF.c];
+      return (typeof x === "string" ? x.localeCompare(y) : x - y) * ordUF.d;
+    });
+    var h = "<thead><tr>" + colUF.map(function (c) {
+      return "<th data-ord='" + c[0] + "' class='" + (c[2] || "") + "'>" + c[1] + (ordUF.c === c[0] ? (ordUF.d < 0 ? " ↓" : " ↑") : "") + "</th>";
+    }).join("") + "</tr></thead><tbody>";
+    lista.forEach(function (u) {
+      h += "<tr>" + colUF.map(function (c) { return "<td class='" + (c[2] || "") + "'>" + (c[0] === "uf" ? (u.uf === "ZZ" ? "Exterior" : u.uf) : f(u[c[0]])) + "</td>"; }).join("") + "</tr>";
+    });
+    var b = D.brasil;
+    h += "<tr class='total'><td>Brasil</td><td>" + f(b.urnas) + "</td><td>" + f(b.estendidas) + "</td><td>" + f(b.v8_17) + "</td><td>" + f(b.v17_19) + "</td><td>" + f(b.sem_h) + "</td><td>" + f(b.lula_tard) + "</td><td>" + f(b.flavio_tard) + "</td></tr></tbody>";
+    var tab = document.getElementById("tab-uf");
+    tab.innerHTML = h;
+    tab.querySelectorAll("th[data-ord]").forEach(function (th) {
+      th.addEventListener("click", function () {
+        var c = th.getAttribute("data-ord");
+        ordUF = { c: c, d: ordUF.c === c ? -ordUF.d : (c === "uf" ? 1 : -1) };
+        tabUF();
+      });
+    });
+  }
+
+  function semAcento(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  function tabMun() {
+    var q = semAcento(document.getElementById("busca").value.trim());
+    var lista = D.municipios;
+    if (q) {
+      lista = lista.filter(function (m) { return semAcento(m[1]).indexOf(q) >= 0 || (q.length === 2 && m[0].toLowerCase() === q); });
+    }
+    lista = lista.slice(0, q ? 200 : 50);
+    var h = "<thead><tr><th class='txt'>Município</th><th class='txt'>UF</th><th>Urnas</th><th>Fecharam após 17h45</th><th>Votos 8h–17h</th><th>Votos após 17h</th><th>Sem horário</th><th>Lula após 17h (est.)</th><th>Flávio após 17h (est.)</th></tr></thead><tbody>";
+    lista.forEach(function (m) {
+      h += "<tr><td class='txt'>" + m[1] + "</td><td class='txt'>" + (m[0] === "ZZ" ? "Exterior" : m[0]) + "</td><td>" + f(m[2]) + "</td><td>" + f(m[3]) + "</td><td>" + f(m[5]) + "</td><td>" + f(m[6]) + "</td><td>" + f(m[7]) + "</td><td>" + f(m[8]) + "</td><td>" + f(m[9]) + "</td></tr>";
+    });
+    if (!lista.length) h += "<tr><td class='txt' colspan='9'>Nenhum município encontrado.</td></tr>";
+    document.getElementById("tab-mun").innerHTML = h + "</tbody>";
+  }
+
+  function numeros() {
+    var t = D.total, b = D.brasil;
+    var tardios = t.faixas["17h_19h"].votos + t.faixas.depois_19h.votos + t.faixas.sem_horario.votos;
+    document.getElementById("h-tardios").textContent = f(tardios);
+    document.getElementById("h-tardios-txt").textContent = "votos depois das 17h, contando os votos sem horário e o exterior: " +
+      pct(tardios, t.comparecimento) + " dos " + f(t.comparecimento) + " votos e " + pct(tardios, D.diferenca) + " da diferença entre os candidatos.";
+    document.getElementById("t-8-17").textContent = f(b.v8_17);
+    document.getElementById("t-17-19").textContent = f(b.v17_19);
+    document.getElementById("t-dif").textContent = f(D.diferenca);
+    document.getElementById("t-est").textContent = f(b.estendidas);
+    document.getElementById("t-est-n").textContent = pct(b.estendidas, b.urnas) + " das " + f(b.urnas) + " urnas do Brasil";
+    document.getElementById("c-igual").textContent = f(D.conferencia.log_igual_bu);
+  }
+
+  // desenha so os graficos da aba visivel (escondido, o grafico nao tem largura)
+  function visivel(id) { return document.getElementById(id).offsetParent !== null; }
+  function desenhar() {
+    if (!D) return;
+    if (visivel("g-escala")) grafEscala();
+    if (visivel("g-dia")) grafLinha("g-dia", 8 * 60, 19 * 60 + 30, [[17 * 60, "17h", "dir"], [19 * 60, "19h", "esq"]]);
+    if (visivel("g-zoom")) grafLinha("g-zoom", 17 * 60 + 10, 19 * 60 + 30, [[19 * 60, "19h", "esq"]]);
+    if (visivel("g-uf")) grafUF();
+    if (visivel("g-mapa")) grafMapa();
+  }
+
+  // ---------- abas ----------
+  var abas = Array.prototype.slice.call(document.querySelectorAll(".aba"));
+  var nav = document.getElementById("abas");
+  // o link e "#estados" e a secao e "aba-estados": assim o navegador nao pula sozinho ate a secao
+  var nomeAba = function (aba) { return aba.id.replace(/^aba-/, ""); };
+  abas.forEach(function (aba, i) { // "anterior / proximo" no fim de cada aba
+    var ant = abas[i - 1], prox = abas[i + 1], h = "<div class='navaba'>";
+    if (ant) h += "<a href='#" + nomeAba(ant) + "'>← Anterior<b>" + ant.dataset.nome + "</b></a>";
+    if (prox) h += "<a class='prox' href='#" + nomeAba(prox) + "'>Próximo →<b>" + prox.dataset.nome + "</b></a>";
+    aba.insertAdjacentHTML("beforeend", h + "</div>");
+  });
+  function abrir(nome, rolar) {
+    var alvo = document.getElementById("aba-" + nome) || abas[0];
+    nome = nomeAba(alvo);
+    abas.forEach(function (a) { a.classList.toggle("ativa", a === alvo); });
+    nav.querySelectorAll("a").forEach(function (a) {
+      var sel = a.getAttribute("href") === "#" + nome;
+      a.setAttribute("aria-selected", sel);
+      if (sel) { // no celular, traz o botao da aba para dentro da barra (so na horizontal)
+        var esq = a.offsetLeft - nav.offsetLeft, dir = esq + a.offsetWidth;
+        if (esq < nav.scrollLeft || dir > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = esq - 16;
+      }
+    });
+    if (location.hash !== "#" + nome) history.replaceState(null, "", "#" + nome);
+    if (rolar && window.scrollY > nav.offsetTop) window.scrollTo({ top: nav.offsetTop });
+    esconderDica();
+    desenhar();
+  }
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest("a[href^='#']");
+    if (!a || !document.getElementById("aba-" + a.getAttribute("href").slice(1))) return;
+    ev.preventDefault();
+    abrir(a.getAttribute("href").slice(1), true);
+  });
+  window.addEventListener("hashchange", function () { abrir(location.hash.slice(1), true); });
+  abrir(location.hash.slice(1), false);
+
+  fetch("dados.json").then(function (r) { return r.json(); }).then(function (d) {
+    D = d;
+    numeros(); tabFaixas(); tabUF(); tabMun(); desenhar();
+    document.getElementById("busca").addEventListener("input", tabMun);
+    var pend; window.addEventListener("resize", function () { clearTimeout(pend); pend = setTimeout(desenhar, 150); });
+  });
+})();
+</script>
+</body>
+</html>
