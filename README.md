@@ -1,5 +1,9 @@
 # Auditoria: votos depois das 17h no 2º turno de 2026
 
+Depois que a votação foi prorrogada até as 19h, muita gente começou a falar que essas duas horas a mais fizeram o Flávio perder. Eu também achei que tinha entrado muito voto depois das 17h. Em vez de acreditar no que estavam falando, resolvi conferir eu mesmo: baixei direto do site do TSE os boletins e os logs de todas as urnas e contei, voto por voto, a que horas cada um foi registrado. Deu 35.900 votos depois das 17h, contra uma diferença de 4,4 milhões entre os candidatos. Não foi isso que decidiu a eleição.
+
+## O que a auditoria responde
+
 Quantos votos foram registrados de 8h a 17h e de 17h a 19h (horário de Brasília) no 2º turno da eleição presidencial de 25/10/2026, e quanto disso, estimado, foi para cada candidato.
 
 Para responder, baixei e li o log de cada uma das 499.177 urnas eletrônicas publicadas pelo TSE e cruzei com o boletim de urna (BU) de cada seção.
@@ -84,5 +88,7 @@ A coleta limita o ritmo a 20 requisições por segundo, reduz sozinha se o servi
 ## Autor
 
 Mateus Costa Cruz · [github.com/Mateusinho28](https://github.com/Mateusinho28)
+
+Os scripts foram escritos com apoio de IA (Claude). Montar a VM, rodar a coleta, conferir os resultados e investigar as divergências foi trabalho meu.
 
 Auditoria independente, sem vínculo com o TSE, partido ou candidato. Código sob licença MIT; os dados são públicos, do Tribunal Superior Eleitoral.
